@@ -1,5 +1,5 @@
 'use client'
-import MapClient from "@/components/MapClient";
+import MapClient from "@/components/map/MapClient";
 import { LoginForm } from "@/components/ui/Login-Form";
 
 export default function Home() {

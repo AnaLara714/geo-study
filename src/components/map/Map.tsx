@@ -8,6 +8,10 @@ import Map, {
     NavigationControl,
 } from 'react-map-gl/maplibre';
 
+import { setWorkerUrl } from "maplibre-gl"
+
+setWorkerUrl('/maplibre/maplibre-gl-worker.mjs')
+
 export default function MapComponent() {
 
     return (
@@ -20,7 +24,6 @@ export default function MapComponent() {
                     zoom: 3,
                 }}
                 mapStyle="https://tiles.openfreemap.org/styles/liberty"
-                // mapStyle="https://demotiles.maplibre.org/style.json"
                 style={{
                     width: '100%',
                     height: '100%',
@@ -34,7 +37,6 @@ export default function MapComponent() {
                     color="#ef4444"
                 />
             </Map>
-
         </div >
     );
 }

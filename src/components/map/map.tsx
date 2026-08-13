@@ -10,7 +10,7 @@ import Map, {
 import { setWorkerUrl } from 'maplibre-gl';
 import { useState } from 'react';
 import { MarkerData, NewMarkPosition } from '@/types/map';
-import AddMarker from '../modal/AddMarker';
+import AddMarker from '../modal/modal-add-marker';
 
 setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 

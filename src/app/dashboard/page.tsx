@@ -3,7 +3,7 @@ import dynamic from 'next/dynamic'
 
 export default function Dashboard() {
 
-    const MapContainer = dynamic(() => import('@/components/map/Map'), { ssr: false })
+    const MapContainer = dynamic(() => import('@/components/map/map'), { ssr: false })
 
     return (
         <div className="flex flex-col flex-1 items-center justify-center font-sans dark:bg-black">

@@ -5,7 +5,7 @@ import * as  maplibregl from 'maplibre-gl';
 import Map, {
     Marker,
     NavigationControl, MapLayerMouseEvent,
-    Popup
+    Popup, Source, Layer
 } from 'react-map-gl/maplibre';
 import { setWorkerUrl } from 'maplibre-gl';
 import { useState } from 'react';
@@ -28,6 +28,8 @@ export default function MapComponent() {
     const [markers, setMarkers] = useState<MarkerData[]>([]);
     const [hoveredMarkerId, setHoveredMarkerId] = useState<number | null>(null);
     const [selectedMarkerId, setSelectedMarkerId] = useState<number | null>(null);
+    const [selectOrigin, setSelectOrigin] = useState<[lng: number, lat: number] | null>(null);
+    const [selectDestination, setSelectDestination] = useState<[lng: number, lat: number] | null>(null);
 
     const [form, setForm] = useState({
         name: "",
@@ -91,6 +93,7 @@ export default function MapComponent() {
     const handleCancelNewMarker = () => {
         setOpenNewMark(false);
         setNewMarkerPosition(null);
+        setSelectedMarkerId(null);
 
         setForm({
             name: "",
@@ -113,12 +116,43 @@ export default function MapComponent() {
         (marker) => marker.id === selectedMarkerId
     );
 
-
     const popupMarkerId = selectedMarkerId ?? hoveredMarkerId;
 
     const popupMarker = markers.find(
         (marker) => marker.id === popupMarkerId
     );
+
+    const handleSelectMarker = (marker: MarkerData) => {
+        if (!selectOrigin) {
+            setSelectOrigin(marker.lngLat);
+            setSelectedMarkerId(marker.id);
+            return;
+        }
+
+        if (!selectDestination) {
+            if (marker.id === selectedMarkerId) {
+                return;
+            }
+            setSelectDestination(marker?.lngLat);
+            setSelectedMarkerId(marker?.id);
+            return;
+        }
+
+        setSelectOrigin(marker.lngLat);
+        setSelectDestination(null);
+        setSelectedMarkerId(null);
+    }
+
+
+    const dataOne = {
+        type: "Feature",
+        properties: {},
+        geometry: {
+            type: "LineString",
+            coordinates: // [lang, lat]
+                [selectOrigin, selectDestination]
+        }
+    };
 
     return (
         <div className="h-full w-full" id='map'>
@@ -144,7 +178,7 @@ export default function MapComponent() {
                             color={isSelected ? "#2563eb" : "#ef4444"}
                             onClick={(evt) => {
                                 evt.originalEvent.stopPropagation();
-                                setSelectedMarkerId(marker.id);
+                                handleSelectMarker(marker);
                             }}
                         >
                             <div
@@ -154,14 +188,31 @@ export default function MapComponent() {
                                     setHoveredMarkerId((current) => current === marker.id ? null : current);
                                 }}
                                 onClick={(event) => {
-                                    event.stopPropagation(); setSelectedMarkerId(marker.id);
+                                    event.stopPropagation();
+                                    handleSelectMarker(marker);
                                 }}
                             >
-                                <div className={`flex h-8 w-8 tems-center justify-center rounded-full border-2 border-white  ${isSelected ? "bg-blue-600" : "bg-red-500"} `}>
-                                    <div className="h-3 w-3 mt-2 rounded-full bg-white z-1" />
+                                <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-white  ${isSelected ? "bg-blue-600" : "bg-red-500"} `}>
+                                    <div className="h-3 w-3 rounded-full bg-white z-1" />
                                 </div>
                                 <div className={`absolute -bottom-0.5 left-1/2 h-3  w-3 -translate-x-1/2 rotate-45 shadow-[2px_2px_12px_5px_rgba(17,_12,_46,_0.15)] ${isSelected ? "bg-blue-600" : "bg-red-500"} `} />
                             </div>
+                            <Source id="polylineLayer" type="geojson" data={dataOne}>
+                                <Layer
+                                    id="lineLayer"
+                                    type="line"
+                                    source="my-data"
+                                    layout={{
+                                        "line-join": "round",
+                                        "line-cap": "round"
+                                    }}
+                                    paint={{
+                                        "line-color": "rgba(3, 170, 238, 0.5)",
+                                        "line-width": 5
+                                    }}
+                                />
+                            </Source>
+
                         </Marker>
                     )
                 })}

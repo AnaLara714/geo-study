@@ -3,7 +3,7 @@ export interface MarkerData {
   name: string;
   description: string;
   type: string;
-  lngLat: [lat: number, lng: number];
+  lngLat: [lng: number, lat: number];
 }
 
 export type NewMarkPosition = {

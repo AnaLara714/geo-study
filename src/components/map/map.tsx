@@ -1,29 +1,35 @@
 'use client';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
-import * as  maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import Map, {
     Marker,
     NavigationControl, MapLayerMouseEvent,
     Popup, Source, Layer
 } from 'react-map-gl/maplibre';
 import { setWorkerUrl } from 'maplibre-gl';
-import { useState } from 'react';
-import { MarkerData, NewMarkPosition } from '@/types/map';
+import { useState, useEffect } from 'react';
+import { MapMode, MarkerData, NewMarkPosition } from '@/types/map';
 import AddMarker from '../modal/modal-add-marker';
+import MenuFunctions from '../menu/menu-functions';
+import InfoMarker from '../modal/modal-info-marker';
 
 setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 
 const MAPS_DEFAULT_LOCATION = {
-    latitude: -12.086374,
-    longitude: -77.042793,
-    zoom: 12,
+    latitude: -3.689,
+    longitude: -40.348,
+    zoom: 15,
 };
 
+
 export default function MapComponent() {
+    const [activeMode, setActiveMode] = useState<MapMode>('none');
+
     const [openNewMark, setOpenNewMark] = useState(false);
 
     const [newMarkerPosition, setNewMarkerPosition] = useState<NewMarkPosition | null>(null);
+    const [markerInfoModal, setMarkerInfoModal] = useState<MarkerData | null>(null);
 
     const [markers, setMarkers] = useState<MarkerData[]>([]);
     const [hoveredMarkerId, setHoveredMarkerId] = useState<number | null>(null);
@@ -37,7 +43,21 @@ export default function MapComponent() {
         type: "",
     });
 
+    useEffect(() => {
+        if (activeMode !== 'location') {
+            setOpenNewMark(false);
+            setNewMarkerPosition(null);
+        }
+        if (activeMode !== 'draw') {
+            setSelectOrigin(null);
+            setSelectDestination(null);
+            setSelectedMarkerId(null);
+        }
+    }, [activeMode]);
+
     const handleMapClick = (event: MapLayerMouseEvent) => {
+        if (activeMode !== 'location') return;
+
         const lngLat: [number, number] = [
             event.lngLat.lng,
             event.lngLat.lat,
@@ -80,49 +100,28 @@ export default function MapComponent() {
         ]);
 
         setOpenNewMark(false);
-
         setNewMarkerPosition(null);
-
-        setForm({
-            name: "",
-            description: "",
-            type: "",
-        });
+        setForm({ name: "", description: "", type: "" });
     };
 
     const handleCancelNewMarker = () => {
         setOpenNewMark(false);
         setNewMarkerPosition(null);
         setSelectedMarkerId(null);
-
-        setForm({
-            name: "",
-            description: "",
-            type: "",
-        });
+        setForm({ name: "", description: "", type: "" });
     };
 
-    const handleFormChange = (
-        field: keyof MarkerData,
-        value: string
-    ) => {
-        setForm((current) => ({
-            ...current,
-            [field]: value,
-        }));
+    const handleFormChange = (field: keyof MarkerData, value: string) => {
+        setForm((current) => ({ ...current, [field]: value }));
     };
 
-    const selectedMarker = markers.find(
-        (marker) => marker.id === selectedMarkerId
-    );
-
+    const selectedMarker = markers.find((marker) => marker.id === selectedMarkerId);
     const popupMarkerId = selectedMarkerId ?? hoveredMarkerId;
-
-    const popupMarker = markers.find(
-        (marker) => marker.id === popupMarkerId
-    );
+    const popupMarker = markers.find((marker) => marker.id === popupMarkerId);
 
     const handleSelectMarker = (marker: MarkerData) => {
+        if (activeMode !== 'draw') return;
+
         if (!selectOrigin) {
             setSelectOrigin(marker.lngLat);
             setSelectedMarkerId(marker.id);
@@ -143,30 +142,29 @@ export default function MapComponent() {
         setSelectedMarkerId(null);
     }
 
-
-    const dataOne = {
+    const lineData = (selectOrigin && selectDestination) ? {
         type: "Feature",
         properties: {},
         geometry: {
             type: "LineString",
-            coordinates: // [lang, lat]
-                [selectOrigin, selectDestination]
+            coordinates: [selectOrigin, selectDestination]
         }
-    };
+    } : null;
 
     return (
-        <div className="h-full w-full" id='map'>
+        <div className="h-screen w-full" id='map'>
             <Map
                 mapLib={maplibregl}
                 initialViewState={MAPS_DEFAULT_LOCATION}
                 mapStyle="https://tiles.openfreemap.org/styles/liberty"
-                style={{
-                    width: '100%',
-                    height: '100%',
-                }}
+                style={{ width: '100%', height: '100%' }}
+                cursor={activeMode === 'location' ? 'crosshair' : activeMode === 'draw' ? 'pointer' : 'grab'}
                 onClick={handleMapClick}
             >
                 <NavigationControl position="top-right" />
+
+                <MenuFunctions activeMode={activeMode} setActiveMode={setActiveMode} drawEnable={!(markers.length >= 2)} />
+
                 {markers.map((marker) => {
                     const isSelected = selectedMarkerId === marker.id;
                     return (
@@ -179,43 +177,43 @@ export default function MapComponent() {
                             onClick={(evt) => {
                                 evt.originalEvent.stopPropagation();
                                 handleSelectMarker(marker);
+
+                                if (activeMode === 'draw') {
+                                    handleSelectMarker(marker);
+                                } else if (activeMode === 'none') {
+                                    setMarkerInfoModal(marker);
+                                }
                             }}
                         >
                             <div
-                                className={`cursor-pointer transition-transform  duration-150 ${isSelected ? "scale-125" : "hover:scale-110"} `}
-                                onMouseEnter={() => { setHoveredMarkerId(marker.id); }}
-                                onMouseLeave={() => {
-                                    setHoveredMarkerId((current) => current === marker.id ? null : current);
-                                }}
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    handleSelectMarker(marker);
-                                }}
+                                className={`cursor-pointer transition-transform duration-150 ${isSelected ? "scale-125" : "hover:scale-110"} `}
+                                onMouseEnter={() => setHoveredMarkerId(marker.id)}
+                                onMouseLeave={() => setHoveredMarkerId((current) => current === marker.id ? null : current)}
                             >
-                                <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-white  ${isSelected ? "bg-blue-600" : "bg-red-500"} `}>
+                                <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-white ${isSelected ? "bg-blue-600" : "bg-red-500"} `}>
                                     <div className="h-3 w-3 rounded-full bg-white z-1" />
                                 </div>
-                                <div className={`absolute -bottom-0.5 left-1/2 h-3  w-3 -translate-x-1/2 rotate-45 shadow-[2px_2px_12px_5px_rgba(17,_12,_46,_0.15)] ${isSelected ? "bg-blue-600" : "bg-red-500"} `} />
+                                <div className={`absolute -bottom-0.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 shadow-[2px_2px_12px_5px_rgba(17,_12,_46,_0.15)] ${isSelected ? "bg-blue-600" : "bg-red-500"} `} />
                             </div>
-                            <Source id="polylineLayer" type="geojson" data={dataOne}>
-                                <Layer
-                                    id="lineLayer"
-                                    type="line"
-                                    source="my-data"
-                                    layout={{
-                                        "line-join": "round",
-                                        "line-cap": "round"
-                                    }}
-                                    paint={{
-                                        "line-color": "rgba(3, 170, 238, 0.5)",
-                                        "line-width": 5
-                                    }}
-                                />
-                            </Source>
-
                         </Marker>
                     )
                 })}
+
+                <Source id="polylineLayer" type="geojson" data={lineData as any}>
+                    <Layer
+                        id="lineLayer"
+                        type="line"
+                        layout={{
+                            "line-join": "round",
+                            "line-cap": "round"
+                        }}
+                        paint={{
+                            "line-color": "rgba(3, 170, 238, 0.5)",
+                            "line-width": 5
+                        }}
+                    />
+                </Source>
+
 
                 {popupMarker && (
                     <Popup
@@ -225,33 +223,12 @@ export default function MapComponent() {
                         offset={35}
                         closeButton={false}
                         closeOnClick={false}
-                        onClose={() => {
-                            setSelectedMarkerId(null);
-                        }}
+                        onClose={() => setSelectedMarkerId(null)}
                     >
                         <div className="min-w-55 max-w-75 p-1">
                             <h3 className="text-base font-semibold text-gray-900">
                                 {popupMarker.name}
                             </h3>
-
-                            {popupMarker.description && (
-                                <p className="mt-1 text-sm text-gray-600">
-                                    {popupMarker.description}
-                                </p>
-                            )}
-
-                            {popupMarker.type && (
-                                <p className="mt-2 text-xs text-gray-500">
-                                    <strong>Tipo:</strong>{" "}
-                                    {popupMarker.type}
-                                </p>
-                            )}
-
-                            {selectedMarkerId === popupMarker.id && (
-                                <div className="mt-3 border-t pt-2 text-xs text-blue-600">
-                                    Referência selecionada
-                                </div>
-                            )}
                         </div>
                     </Popup>
                 )}
@@ -266,8 +243,10 @@ export default function MapComponent() {
                     newMarkerPosition={newMarkerPosition}
                 />
             )}
+
+            {markerInfoModal && (
+                <InfoMarker markerInfoModal={markerInfoModal} onClickClose={() => setMarkerInfoModal(null)} />
+            )}
         </div >
     );
 }
-
-

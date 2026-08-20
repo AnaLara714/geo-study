@@ -9,3 +9,5 @@ export interface MarkerData {
 export type NewMarkPosition = {
   lngLat: [lat: number, lng: number];
 };
+
+export type MapMode = 'none' | 'location' | 'draw' | 'zone';

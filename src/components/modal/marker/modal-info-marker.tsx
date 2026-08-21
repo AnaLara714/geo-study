@@ -1,5 +1,5 @@
 import { MarkerData, NewMarkPosition } from "@/types/map";
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button";
 
 interface propsInfoMarker {
     markerInfoModal: MarkerData | null;

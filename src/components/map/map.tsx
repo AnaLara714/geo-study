@@ -9,19 +9,22 @@ import Map, {
 } from 'react-map-gl/maplibre';
 import { setWorkerUrl } from 'maplibre-gl';
 import { useState, useEffect } from 'react';
+
 import { MapMode, MarkerData, NewMarkPosition } from '@/types/map';
-import AddMarker from '../modal/modal-add-marker';
-import MenuFunctions from '../menu/menu-functions';
-import InfoMarker from '../modal/modal-info-marker';
+import { ZoneData } from '@/types/zone';
+
+import { MAPS_DEFAULT_LOCATION } from '@/utils/constants';
+import { isPointInPolygon } from '@/utils/functions';
+
+import MenuFunctions from '@/components/menu/menu-functions';
+import AddMarker from '@/components/modal/marker/modal-add-marker';
+import InfoMarker from '@/components/modal/marker/modal-info-marker';
+import ZonesLayer from '@/components/layer/zone-layer';
+import MenuBottom from '@/components/menu/menu-bottom';
+import AddZone from '@/components/modal/zone/modal-add-zone';
+import InfoZone from '@/components/modal/zone/modal-infoZone';
 
 setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
-
-const MAPS_DEFAULT_LOCATION = {
-    latitude: -3.689,
-    longitude: -40.348,
-    zoom: 15,
-};
-
 
 export default function MapComponent() {
     const [activeMode, setActiveMode] = useState<MapMode>('none');
@@ -30,6 +33,12 @@ export default function MapComponent() {
 
     const [newMarkerPosition, setNewMarkerPosition] = useState<NewMarkPosition | null>(null);
     const [markerInfoModal, setMarkerInfoModal] = useState<MarkerData | null>(null);
+
+    const [zones, setZones] = useState<ZoneData[]>([]);
+    const [currentZonePoints, setCurrentZonePoints] = useState<[number, number][]>([]);
+    const [openNewZone, setOpenNewZone] = useState(false);
+    const [zoneForm, setZoneForm] = useState({ name: "", color: "#3b82f6" });
+    const [selectedZoneModal, setSelectedZoneModal] = useState<ZoneData | null>(null);
 
     const [markers, setMarkers] = useState<MarkerData[]>([]);
     const [hoveredMarkerId, setHoveredMarkerId] = useState<number | null>(null);
@@ -53,29 +62,67 @@ export default function MapComponent() {
             setSelectDestination(null);
             setSelectedMarkerId(null);
         }
+        if (activeMode !== 'zone') {
+            setCurrentZonePoints([]);
+            setOpenNewZone(false);
+        }
     }, [activeMode]);
 
     const handleMapClick = (event: MapLayerMouseEvent) => {
-        if (activeMode !== 'location') return;
-
         const lngLat: [number, number] = [
             event.lngLat.lng,
             event.lngLat.lat,
         ];
 
-        setSelectedMarkerId(null);
+        if (activeMode === 'none') {
+            const zoneFeature = event.features?.find((f) => f.layer.id === 'saved-zones-fill');
+            if (zoneFeature) {
+                const zoneId = zoneFeature.properties?.id;
+                const clickedZone = zones.find((z) => z.id === zoneId);
+                if (clickedZone) {
+                    setSelectedZoneModal(clickedZone);
+                    return;
+                }
+            }
+        }
 
-        setNewMarkerPosition({
-            lngLat,
-        });
+        if (activeMode === 'location') {
+            setSelectedMarkerId(null);
+            setNewMarkerPosition({ lngLat });
+            setForm({ name: "", description: "", type: "" });
+            setOpenNewMark(true);
+        }
+        else if (activeMode === 'zone' && !openNewZone) {
+            setCurrentZonePoints((prev) => [...prev, lngLat]);
+        }
+    };
 
-        setForm({
-            name: "",
-            description: "",
-            type: "",
-        });
+    const handleOpenZoneModal = () => {
+        if (currentZonePoints.length < 3) return;
+        setOpenNewZone(true);
+    };
 
-        setOpenNewMark(true);
+    const confirmSaveZone = () => {
+        if (!zoneForm.name.trim()) {
+            alert("Informe o nome da zona.");
+            return;
+        }
+
+        const newZone: ZoneData = {
+            id: Date.now(),
+            name: zoneForm.name.trim(),
+            coordinates: [...currentZonePoints, currentZonePoints[0]],
+            color: zoneForm.color,
+        };
+
+        setZones((prev) => [...prev, newZone]);
+        setCurrentZonePoints([]);
+        setOpenNewZone(false);
+        setZoneForm({ name: "", color: "#3b82f6" });
+    };
+
+    const handleCancelZone = () => {
+        setOpenNewZone(false);
     };
 
     const handleSaveMarker = () => {
@@ -94,10 +141,7 @@ export default function MapComponent() {
             type: form.type.trim(),
         };
 
-        setMarkers((prev) => [
-            ...prev,
-            newMarker,
-        ]);
+        setMarkers((prev) => [...prev, newMarker]);
 
         setOpenNewMark(false);
         setNewMarkerPosition(null);
@@ -115,9 +159,9 @@ export default function MapComponent() {
         setForm((current) => ({ ...current, [field]: value }));
     };
 
-    const selectedMarker = markers.find((marker) => marker.id === selectedMarkerId);
-    const popupMarkerId = selectedMarkerId ?? hoveredMarkerId;
-    const popupMarker = markers.find((marker) => marker.id === popupMarkerId);
+    const handleZoneFormChange = (field: keyof ZoneData, value: string) => {
+        setZoneForm((current) => ({ ...current, [field]: value }));
+    };
 
     const handleSelectMarker = (marker: MarkerData) => {
         if (activeMode !== 'draw') return;
@@ -142,6 +186,10 @@ export default function MapComponent() {
         setSelectedMarkerId(null);
     }
 
+    const selectedMarker = markers.find((marker) => marker.id === selectedMarkerId);
+    const popupMarkerId = selectedMarkerId ?? hoveredMarkerId;
+    const popupMarker = markers.find((marker) => marker.id === popupMarkerId);
+
     const lineData = (selectOrigin && selectDestination) ? {
         type: "Feature",
         properties: {},
@@ -151,15 +199,20 @@ export default function MapComponent() {
         }
     } : null;
 
+    const markersInsideSelectedZone = selectedZoneModal
+        ? markers.filter((marker) => isPointInPolygon(marker.lngLat, selectedZoneModal.coordinates))
+        : [];
+
     return (
-        <div className="h-screen w-full" id='map'>
+        <div className="h-screen w-full relative" id='map'>
             <Map
                 mapLib={maplibregl}
                 initialViewState={MAPS_DEFAULT_LOCATION}
                 mapStyle="https://tiles.openfreemap.org/styles/liberty"
                 style={{ width: '100%', height: '100%' }}
-                cursor={activeMode === 'location' ? 'crosshair' : activeMode === 'draw' ? 'pointer' : 'grab'}
+                cursor={activeMode === 'location' || activeMode === 'zone' ? 'crosshair' : activeMode === 'draw' ? 'pointer' : 'grab'}
                 onClick={handleMapClick}
+                interactiveLayerIds={['saved-zones-fill']}
             >
                 <NavigationControl position="top-right" />
 
@@ -176,7 +229,6 @@ export default function MapComponent() {
                             color={isSelected ? "#2563eb" : "#ef4444"}
                             onClick={(evt) => {
                                 evt.originalEvent.stopPropagation();
-                                handleSelectMarker(marker);
 
                                 if (activeMode === 'draw') {
                                     handleSelectMarker(marker);
@@ -214,6 +266,7 @@ export default function MapComponent() {
                     />
                 </Source>
 
+                <ZonesLayer zones={zones} currentZonePoints={currentZonePoints} />
 
                 {popupMarker && (
                     <Popup
@@ -233,6 +286,28 @@ export default function MapComponent() {
                     </Popup>
                 )}
             </Map>
+
+            {activeMode === 'zone' && currentZonePoints.length >= 3 && !openNewZone && (
+                <MenuBottom handleOpenZoneModal={handleOpenZoneModal} onClickClean={() => setCurrentZonePoints([])} />
+            )}
+
+            {selectedZoneModal && (
+                <InfoZone
+                    markersInsideSelectedZone={markersInsideSelectedZone}
+                    selectedZoneModal={selectedZoneModal}
+                    onClickClose={() => setSelectedZoneModal(null)}
+                />
+            )}
+
+            {openNewZone && (
+                <AddZone
+                    zoneForm={zoneForm}
+                    onChange={handleZoneFormChange}
+                    handleCancelZone={handleCancelZone}
+                    confirmSaveZone={confirmSaveZone}
+                    handleOpenZoneModal={handleOpenZoneModal}
+                />
+            )}
 
             {openNewMark && newMarkerPosition && (
                 <AddMarker

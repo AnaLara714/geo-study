@@ -1,7 +1,7 @@
 import { MarkerData, NewMarkPosition } from "@/types/map";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
+import { Button } from "../../ui/button";
+import { Input } from "../../ui/input";
+import { Textarea } from "../../ui/textarea";
 
 interface propsAddMarker {
     form: {
@@ -42,7 +42,9 @@ export default function AddMarker({ form, handleCancelNewMarker, handleSaveMarke
                         value={form.name}
                         onChange={(event) => onChange("name", event.target.value)}
                         placeholder="Ex.: Entrada principal"
-                        className=" w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 " />
+                        className=" w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 "
+                        required
+                    />
                 </div>
 
                 <div>
@@ -55,7 +57,8 @@ export default function AddMarker({ form, handleCancelNewMarker, handleSaveMarke
                         onChange={(event) => onChange("description", event.target.value)}
                         placeholder="Descreva o local..."
                         rows={3}
-                        className=" w-full resize-none rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 " />
+                        className=" w-full resize-none rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 "
+                    />
                 </div>
 
                 <div>
@@ -68,7 +71,8 @@ export default function AddMarker({ form, handleCancelNewMarker, handleSaveMarke
                         value={form.type}
                         onChange={(event) => onChange("type", event.target.value)}
                         placeholder="Ex.: área de lazer, ponto gastronomico, ponto de saúde..."
-                        className=" w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 " />
+                        className=" w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 "
+                    />
                 </div>
 
                 <div className="rounded-lg bg-gray-50 p-3 text-xs text-gray-500">

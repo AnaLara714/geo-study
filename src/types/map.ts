@@ -18,4 +18,4 @@ export type NewMarkPosition = {
   lngLat: [lat: number, lng: number];
 };
 
-export type MapMode = 'none' | 'location' | 'draw' | 'zone';
+export type MapMode = 'none' | 'location' | 'draw' | 'zone' | 'graph';

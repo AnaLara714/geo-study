@@ -26,6 +26,7 @@ import InfoZone from '@/components/modal/zone/modal-infoZone';
 import RelationsLayer from '@/components/layer/relations-layer';
 import AddRelation from '@/components/modal/relation/modal-add-relation';
 import InfoRelation from '@/components/modal/relation/modal-info-relation';
+import GraphView from '@/components/modal/graph/graphView';
 
 setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 
@@ -56,6 +57,8 @@ export default function MapComponent() {
     const [hoveredLineInfo, setHoveredLineInfo] = useState<{ x: number; y: number; name: string } | null>(null);
     const [selectedRelationInfoModal, setSelectedRelationInfoModal] = useState<RelationData | null>(null);
 
+    const [openGraphModal, setOpenGraphModal] = useState(false);
+
     const [form, setForm] = useState({
         name: "",
         description: "",
@@ -76,6 +79,9 @@ export default function MapComponent() {
         if (activeMode !== 'zone') {
             setCurrentZonePoints([]);
             setOpenNewZone(false);
+        }
+        if (activeMode === 'graph') {
+            setOpenGraphModal(true);
         }
 
         setHoveredLineInfo(null);
@@ -261,6 +267,11 @@ export default function MapComponent() {
         setRelationForm({ name: "", color: "#ef4444" });
     };
 
+    const handleCancelGraph = () => {
+        setOpenGraphModal(false);
+        setActiveMode('none');
+    };
+
     const selectedMarker = markers.find((marker) => marker.id === selectedMarkerId);
     const popupMarkerId = selectedMarkerId ?? hoveredMarkerId;
     const popupMarker = markers.find((marker) => marker.id === popupMarkerId);
@@ -410,6 +421,10 @@ export default function MapComponent() {
                     destMarker={destMarker}
                     onClickClose={() => setSelectedRelationInfoModal(null)}
                 />
+            )}
+
+            {openGraphModal && (
+                <GraphView markers={markers} relations={relations} onClose={handleCancelGraph} />
             )}
         </div >
     );

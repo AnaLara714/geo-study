@@ -43,6 +43,15 @@ export default function MenuFunctions({ activeMode, setActiveMode, drawEnable }:
       >
         Zonas
       </Button>
+
+      <Button
+        className='shadow-xl w-30 cursor-pointer'
+        type='button'
+        variant={activeMode === 'graph' ? "default" : "secondary"}
+        onClick={() => toggleMode('graph')}
+      >
+        Grafo
+      </Button>
     </div>
   );
 }

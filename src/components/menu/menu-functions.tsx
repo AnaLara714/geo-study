@@ -10,7 +10,6 @@ interface MenuFunctionsProps {
 
 export default function MenuFunctions({ activeMode, setActiveMode, drawEnable }: MenuFunctionsProps) {
 
-  // Alterna o modo: se clicar num modo já ativo, ele desativa (volta para 'none')
   const toggleMode = (mode: MapMode) => {
     setActiveMode(activeMode === mode ? 'none' : mode);
   };
@@ -33,7 +32,7 @@ export default function MenuFunctions({ activeMode, setActiveMode, drawEnable }:
         onClick={() => toggleMode('draw')}
         disabled={drawEnable}
       >
-        Traçar Pontos
+        Relação
       </Button>
 
       <Button

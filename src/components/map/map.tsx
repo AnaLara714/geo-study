@@ -16,6 +16,10 @@ import { ZoneData } from '@/types/zone';
 import { MAPS_DEFAULT_LOCATION } from '@/utils/constants';
 import { isPointInPolygon } from '@/utils/functions';
 
+import { createMarkerLocation, getAllMarkersLocation } from '@/services/location';
+import { createMarkerRelation, getAllMarkersRelation } from '@/services/relation';
+import { createMarkerZones, getAllMarkersZones } from '@/services/zones';
+
 import MenuFunctions from '@/components/menu/menu-functions';
 import AddMarker from '@/components/modal/marker/modal-add-marker';
 import InfoMarker from '@/components/modal/marker/modal-info-marker';
@@ -46,6 +50,7 @@ export default function MapComponent() {
 
     const [markers, setMarkers] = useState<MarkerData[]>([]);
     const [hoveredMarkerId, setHoveredMarkerId] = useState<number | null>(null);
+    const [loading, setLoading] = useState(true);
 
     const [selectedMarkerId, setSelectedMarkerId] = useState<number | null>(null);
     const [selectOrigin, setSelectOrigin] = useState<[lng: number, lat: number] | null>(null);
@@ -64,6 +69,10 @@ export default function MapComponent() {
         description: "",
         type: "",
     });
+
+    useEffect(() => {
+        loadMarkers();
+    }, []);
 
     useEffect(() => {
         if (activeMode !== 'location') {
@@ -86,6 +95,23 @@ export default function MapComponent() {
 
         setHoveredLineInfo(null);
     }, [activeMode]);
+
+    async function loadMarkers() {
+        try {
+            setLoading(true);
+            const dataLocations = await getAllMarkersLocation();
+            const dataRelations = await getAllMarkersRelation();
+            const dataZones = await getAllMarkersZones();
+
+            setMarkers(dataLocations);
+            setRelations(dataRelations);
+            setZones(dataZones);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    }
 
     const handleMapClick = (event: MapLayerMouseEvent) => {
         const lngLat: [number, number] = [
@@ -151,20 +177,24 @@ export default function MapComponent() {
         setOpenNewZone(true);
     };
 
-    const confirmSaveZone = () => {
+    const confirmSaveZone = async () => {
         if (!zoneForm.name.trim()) {
             alert("Informe o nome da zona.");
             return;
         }
 
-        const newZone: ZoneData = {
-            id: Date.now(),
+        const newZone: Omit<ZoneData, 'id'> = {
             name: zoneForm.name.trim(),
             coordinates: [...currentZonePoints, currentZonePoints[0]],
             color: zoneForm.color,
         };
+        try {
+            const data = await createMarkerZones(newZone);
+            setZones((prev) => [...prev, data]);
+        } catch (error) {
+            console.error(error);
+        }
 
-        setZones((prev) => [...prev, newZone]);
         setCurrentZonePoints([]);
         setOpenNewZone(false);
         setZoneForm({ name: "", color: "#3b82f6" });
@@ -174,7 +204,7 @@ export default function MapComponent() {
         setOpenNewZone(false);
     };
 
-    const handleSaveMarker = () => {
+    const handleSaveMarker = async () => {
         if (!newMarkerPosition) return;
 
         if (!form.name.trim()) {
@@ -182,15 +212,19 @@ export default function MapComponent() {
             return;
         }
 
-        const newMarker: MarkerData = {
-            id: Date.now(),
+        const newMarker: Omit<MarkerData, 'id'> = {
             lngLat: newMarkerPosition.lngLat,
             name: form.name.trim(),
             description: form.description.trim(),
             type: form.type.trim(),
         };
 
-        setMarkers((prev) => [...prev, newMarker]);
+        try {
+            const data = await createMarkerLocation(newMarker)
+            setMarkers((prev) => [...prev, data]);
+        } catch (error) {
+            console.error(error);
+        }
 
         setOpenNewMark(false);
         setNewMarkerPosition(null);
@@ -236,22 +270,27 @@ export default function MapComponent() {
         }
     }
 
-    const confirmSaveRelation = () => {
+    const confirmSaveRelation = async () => {
         if (!relationForm.name.trim()) {
             alert("Informe um nome para esta relação.");
             return;
         }
 
         if (selectOrigin && selectDestination) {
-            const newRelation: RelationData = {
-                id: Date.now(),
+            const newRelation: Omit<RelationData, 'id'> = {
+
                 name: relationForm.name.trim(),
                 color: relationForm.color,
                 originLngLat: selectOrigin,
                 destinationLngLat: selectDestination,
             };
 
-            setRelations((prev) => [...prev, newRelation]);
+            try {
+                const data = await createMarkerRelation(newRelation)
+                setRelations((prev) => [...prev, data]);
+            } catch (error) {
+                console.error(error);
+            }
         }
 
         setSelectOrigin(null);

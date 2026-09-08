@@ -1,5 +1,5 @@
 export interface MarkerData {
-  id: number;
+  id: number | null;
   name: string;
   description: string;
   type: string;

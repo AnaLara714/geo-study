@@ -20,3 +20,11 @@ export async function createMarkerZones(location: Omit<ZoneData, 'id'>) {
 
   return res.json();
 }
+
+export async function deleteMarkerZone(id?: number | null): Promise<void> {
+  const res = await fetch(`${API_URL}/zones/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok) throw new Error('Falha ao remover a zona');
+}

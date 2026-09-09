@@ -20,3 +20,11 @@ export async function createMarkerRelation(relation: Omit<RelationData, 'id'>) {
 
   return res.json();
 }
+
+export async function deleteMarkerRelation(id?: number | null): Promise<void> {
+  const res = await fetch(`${API_URL}/relations/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok) throw new Error('Falha ao remover a relação');
+}

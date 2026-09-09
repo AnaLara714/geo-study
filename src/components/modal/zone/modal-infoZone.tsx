@@ -6,10 +6,10 @@ interface propsInfoZone {
     selectedZoneModal: ZoneData;
     markersInsideSelectedZone: MarkerData[];
     onClickClose: () => void;
-
+    onClickDelete: () => void;
 }
 
-export default function InfoZone({ selectedZoneModal, markersInsideSelectedZone, onClickClose }: propsInfoZone) {
+export default function InfoZone({ selectedZoneModal, markersInsideSelectedZone, onClickClose, onClickDelete }: propsInfoZone) {
     return (
         <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-white p-6 rounded-lg w-96 shadow-xl max-h-[80vh] flex flex-col">
@@ -49,11 +49,20 @@ export default function InfoZone({ selectedZoneModal, markersInsideSelectedZone,
                     )}
                 </div>
 
-                <Button
-                    onClick={onClickClose}
-                >
-                    Fechar
-                </Button>
+                <div className="flex justify-between">
+                    <Button
+                        variant="destructive"
+                        onClick={onClickDelete}
+                    >
+                        Deletar
+                    </Button>
+                    <Button
+                        variant="default"
+                        onClick={onClickClose}
+                    >
+                        Fechar
+                    </Button>
+                </div>
             </div>
         </div>
     )

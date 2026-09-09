@@ -16,7 +16,15 @@ export async function createMarkerLocation(location: Omit<MarkerData, 'id'>) {
     body: JSON.stringify(location),
   });
 
-  if (!res) throw new Error('Falaha ao criar localização no mapa');
+  if (!res) throw new Error('Falha ao criar localização no mapa');
 
   return res.json();
+}
+
+export async function deleteMarkerLocation(id?: number | null): Promise<void> {
+  const res = await fetch(`${API_URL}/locations/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok) throw new Error('Falha ao remover a localização');
 }

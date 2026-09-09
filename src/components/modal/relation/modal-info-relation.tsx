@@ -6,9 +6,10 @@ interface propsInfoRelation {
     originMarker: MarkerData | null | undefined;
     destMarker: MarkerData | null | undefined;
     onClickClose: () => void;
+    onClickDelete: () => void;
 }
 
-export default function InfoRelation({ selectedRelationInfoModal, originMarker, destMarker, onClickClose }: propsInfoRelation) {
+export default function InfoRelation({ selectedRelationInfoModal, originMarker, destMarker, onClickClose, onClickDelete }: propsInfoRelation) {
     return (
         <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-white p-6 rounded-lg w-96 shadow-xl flex flex-col">
@@ -38,13 +39,20 @@ export default function InfoRelation({ selectedRelationInfoModal, originMarker, 
                     </div>
                 </div>
 
-                <Button
-                    onClick={onClickClose}
-                    variant={"destructive"}
-                    className="w-full py-2.5 bg-gray-800 text-white font-medium rounded-md hover:bg-gray-900 transition-colors"
-                >
-                    Fechar
-                </Button>
+                <div className="flex justify-between">
+                    <Button
+                        variant="destructive"
+                        onClick={onClickDelete}
+                    >
+                        Deletar
+                    </Button>
+                    <Button
+                        variant="default"
+                        onClick={onClickClose}
+                    >
+                        Fechar
+                    </Button>
+                </div>
             </div>
         </div>
     )

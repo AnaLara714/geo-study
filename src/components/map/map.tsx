@@ -16,9 +16,9 @@ import { ZoneData } from '@/types/zone';
 import { MAPS_DEFAULT_LOCATION } from '@/utils/constants';
 import { isPointInPolygon } from '@/utils/functions';
 
-import { createMarkerLocation, getAllMarkersLocation } from '@/services/location';
-import { createMarkerRelation, getAllMarkersRelation } from '@/services/relation';
-import { createMarkerZones, getAllMarkersZones } from '@/services/zones';
+import { createMarkerLocation, deleteMarkerLocation, getAllMarkersLocation } from '@/services/location';
+import { createMarkerRelation, deleteMarkerRelation, getAllMarkersRelation } from '@/services/relation';
+import { createMarkerZones, deleteMarkerZone, getAllMarkersZones } from '@/services/zones';
 
 import MenuFunctions from '@/components/menu/menu-functions';
 import AddMarker from '@/components/modal/marker/modal-add-marker';
@@ -204,6 +204,18 @@ export default function MapComponent() {
         setOpenNewZone(false);
     };
 
+    const handleDeleteMarkerZone = async (id?: number | null) => {
+        try {
+            await deleteMarkerZone(id);
+            setZones((prev) => prev.filter((zone) => zone.id !== id));
+            setSelectedZoneModal(null);
+
+            await loadMarkers();
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
     const handleSaveMarker = async () => {
         if (!newMarkerPosition) return;
 
@@ -237,6 +249,18 @@ export default function MapComponent() {
         setSelectedMarkerId(null);
         setForm({ name: "", description: "", type: "" });
     };
+
+    const handleDeleteMarkerLocation = async (id?: number | null) => {
+        try {
+            await deleteMarkerLocation(id);
+            setMarkers((prev) => prev.filter((marker) => marker.id !== id));
+            setMarkerInfoModal(null);
+
+            await loadMarkers();
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
     const handleFormChange = (field: keyof MarkerData, value: string) => {
         setForm((current) => ({ ...current, [field]: value }));
@@ -305,6 +329,18 @@ export default function MapComponent() {
         setOpenRelationModal(false);
         setRelationForm({ name: "", color: "#ef4444" });
     };
+
+    const handleDeleteMarkerRelation = async (id?: number | null) => {
+        try {
+            await deleteMarkerRelation(id);
+            setRelations((prev) => prev.filter((relation) => relation.id !== id));
+            setSelectedRelationInfoModal(null);
+
+            await loadMarkers();
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
     const handleCancelGraph = () => {
         setOpenGraphModal(false);
@@ -417,6 +453,7 @@ export default function MapComponent() {
                     markersInsideSelectedZone={markersInsideSelectedZone}
                     selectedZoneModal={selectedZoneModal}
                     onClickClose={() => setSelectedZoneModal(null)}
+                    onClickDelete={() => handleDeleteMarkerZone(selectedZoneModal?.id)}
                 />
             )}
 
@@ -441,7 +478,11 @@ export default function MapComponent() {
             )}
 
             {markerInfoModal && (
-                <InfoMarker markerInfoModal={markerInfoModal} onClickClose={() => setMarkerInfoModal(null)} />
+                <InfoMarker
+                    markerInfoModal={markerInfoModal}
+                    onClickClose={() => setMarkerInfoModal(null)}
+                    onClickDelete={() => handleDeleteMarkerLocation(markerInfoModal?.id)}
+                />
             )}
 
             {openRelationModal && (
@@ -459,6 +500,7 @@ export default function MapComponent() {
                     originMarker={originMarker}
                     destMarker={destMarker}
                     onClickClose={() => setSelectedRelationInfoModal(null)}
+                    onClickDelete={() => handleDeleteMarkerRelation(selectedRelationInfoModal?.id)}
                 />
             )}
 

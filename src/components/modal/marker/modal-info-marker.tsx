@@ -1,12 +1,13 @@
-import { MarkerData, NewMarkPosition } from "@/types/map";
+import { MarkerData } from "@/types/map";
 import { Button } from "../../ui/button";
 
 interface propsInfoMarker {
     markerInfoModal: MarkerData | null;
     onClickClose: () => void;
+    onClickDelete: () => void;
 }
 
-export default function InfoMarker({ markerInfoModal, onClickClose }: propsInfoMarker) {
+export default function InfoMarker({ markerInfoModal, onClickClose, onClickDelete }: propsInfoMarker) {
     return (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
@@ -34,7 +35,13 @@ export default function InfoMarker({ markerInfoModal, onClickClose }: propsInfoM
                     </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-between">
+                    <Button
+                        variant="destructive"
+                        onClick={onClickDelete}
+                    >
+                        Deletar
+                    </Button>
                     <Button
                         variant="default"
                         onClick={onClickClose}

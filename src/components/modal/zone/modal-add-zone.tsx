@@ -43,7 +43,7 @@ export default function AddZone({ zoneForm, confirmSaveZone, handleCancelZone, o
                         type="color"
                         className="w-full h-10 border border-gray-300 p-1 rounded-md cursor-pointer"
                         value={zoneForm.color}
-                        onChange={(event) => onChange("name", event.target.value)}
+                        onChange={(event) => onChange("color", event.target.value)}
                     />
                 </div>
 
